@@ -54,9 +54,18 @@ function applyFilters(state) {
   return { ...state, shown };
 }
 
-function updateCount(shown) {
+const SORT_LABELS = {
+  discount: "biggest discount",
+  saved: "most money saved",
+  "price-asc": "lowest price",
+  "price-desc": "highest price",
+};
+
+function updateCount(shown, sort) {
   const el = document.getElementById("count");
-  if (el) el.textContent = `Showing ${shown.length} of ${deals.length} deals — sorted by biggest discount.`;
+  // The count line used to always say "sorted by biggest discount" even
+  // when another sort was picked; name the sort that is actually applied.
+  if (el) el.textContent = `Showing ${shown.length} of ${deals.length} deals — sorted by ${SORT_LABELS[sort] || SORT_LABELS.discount}.`;
 }
 
 function render() {
@@ -71,7 +80,7 @@ function render() {
     const state = applyFilters(stateFrom(params));
     document.title = "Black Friday deal finder — real deals, checked 27 Nov 2026";
     app.innerHTML = list(deals, state, CATEGORIES, STORES);
-    updateCount(state.shown);
+    updateCount(state.shown, state.sort);
     const grid = document.getElementById("grid");
     const refresh = () => {
       const next = applyFilters({
@@ -82,7 +91,7 @@ function render() {
         sort: document.getElementById("sort").value,
       });
       grid.innerHTML = rows(next.shown);
-      updateCount(next.shown);
+      updateCount(next.shown, next.sort);
     };
     for (const id of ["q", "cat", "store", "disc", "sort"]) {
       const el = document.getElementById(id);
