@@ -1,5 +1,26 @@
 // HTML for every page, built from the deal data. Every value is escaped
 // before it goes into the page, so a deal's text can never break the markup.
+//
+// Freshness: a deal whose price was checked more than a day before the
+// board's own check time (CHECKED_AT) is stale — Black Friday prices move
+// fast, so a stale card and detail page say so plainly instead of passing
+// an old price off as checked. Every deal on this board was checked at
+// CHECKED_AT itself, so none is stale today; the check guards the board
+// the moment a deal's check time falls behind.
+
+import { CHECKED_AT } from "./data.js";
+
+const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
+
+export function isStale(d) {
+  return Date.parse(CHECKED_AT) - Date.parse(d.checked) > STALE_AFTER_MS;
+}
+
+function staleWarning(d) {
+  return isStale(d)
+    ? `<p class="stale">Price check is over a day old — confirm the price at the store before you buy.</p>`
+    : "";
+}
 
 const escape = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const usd = (n) => `$${Number(n).toLocaleString("en-US", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })}`;
@@ -28,6 +49,7 @@ export function dealCard(d) {
   <p class="price">${usd(d.price)} <s>${usd(d.was)}</s> <b class="off">${percentOff(d)}% off</b></p>
   <p class="save">You save ${usd(saved(d))}</p>
   <p class="checked">Checked ${day(d.checked)}</p>
+  ${staleWarning(d)}
   <p class="go"><a class="btn" href="${escape(d.url)}" rel="noopener" target="_blank">See it at ${escape(d.store)} &rarr;</a></p>
 </article>`;
 }
@@ -101,6 +123,7 @@ export function deal(d, others) {
   <p class="big-price">${usd(d.price)} <s>${usd(d.was)}</s> <b class="off">${percentOff(d)}% off</b></p>
   <p class="save">You save ${usd(saved(d))} off the usual price of ${usd(d.was)}.</p>
   <p class="note">${escape(d.note)}</p>
+  ${staleWarning(d)}
   <dl>
     <dt>Checked</dt><dd>${day(d.checked)}</dd>
     <dt>Price read in</dt><dd>${escape(d.source)}</dd>
